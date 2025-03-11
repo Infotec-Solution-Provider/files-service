@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id         String      @id @db.Uuid
+  name       String      @db.VarChar(100)
+  mime_type  String      @db.VarChar(100)
+  size       Int
+  dir_type   FileDirType
+  storage_id Int
+
+  storage Storage @relation(fields: [storage_id], references: [id], onUpdate: Restrict, map: "FK_FILE_STORAGE")
+
+  @@map("files")
+}
+
+model Storage {
+  id       Int             @id
+  instance String          @db.VarChar(30)
+  type     FileStorageType
+  details  Json?           @db.Json
+
+  files File[]
+
+  @@map("storages")
+}
+
+enum FileStorageType {
+  server
+  client
+}
+
+enum FileDirType {
+  public
+  temp
+  models
+}

@@ -33,6 +33,8 @@ class FilesController extends Controller {
 	public async uploadFile(req: Request, res: Response) {
 		const { instance, dirType } = req.body;
 
+        console.log(req.body);
+        
 		if (!instance || !dirType) {
 			res.status(400).send({
 				message: "Instance and dirType fields are required",

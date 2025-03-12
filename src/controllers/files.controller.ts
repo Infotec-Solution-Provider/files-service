@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import filesService from "../services/files.service";
 import Controller from "./controller";
+import upload from "../middlewares/multer.middleware";
 
 class FilesController extends Controller {
 	private readonly filesService = filesService;
@@ -9,7 +10,7 @@ class FilesController extends Controller {
 		super();
 
 		this.router.get("/files/:id", this.getFile);
-		this.router.post("/files", this.uploadFile);
+		this.router.post("/files", upload.single("file") ,this.uploadFile);
 	}
 
 	public async getFile(req: Request, res: Response) {
@@ -32,6 +33,8 @@ class FilesController extends Controller {
 
 	public async uploadFile(req: Request, res: Response) {
 		const { instance, dirType } = req.body;
+
+        console.log(req.body);
 
 		if (!instance || !dirType) {
 			res.status(400).send({

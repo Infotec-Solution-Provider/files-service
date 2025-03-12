@@ -16,6 +16,10 @@ class FilesController extends Controller {
 		const { id } = req.params;
 		const file = await this.filesService.getFile(Number(id));
 
+		console.log(
+			`${new Date().toLocaleString()} - File with name ${file.name} downloaded`
+		);
+
 		res.setHeader("Content-Type", file.mimeType);
 		res.setHeader("Content-Length", file.size);
 		res.setHeader(
@@ -49,6 +53,12 @@ class FilesController extends Controller {
 			file
 		);
 
+		console.log(
+			`${new Date().toLocaleString()} - File with name ${
+				file.originalname
+			} uploaded`
+		);
+
 		res.status(201).send({
 			message: "File uploaded successfully",
 			data: savedFile,
@@ -59,6 +69,10 @@ class FilesController extends Controller {
 		const { id } = req.params;
 
 		await this.filesService.deleteFile(Number(id));
+
+		console.log(
+			`${new Date().toLocaleString()} - File with id ${id} deleted`
+		);
 
 		res.status(204).send();
 	}

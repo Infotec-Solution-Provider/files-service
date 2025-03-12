@@ -40,7 +40,7 @@ class ClientStorageInstance implements StorageInstance {
 
 	public async read(file: File): Promise<Buffer> {
 		const response = await this._xhr.get(
-			`/files/${file.dir_type}/${file.id}`,
+			`/files/${file.dir_type}/${file.id_storage}`,
 			{ responseType: "stream" }
 		);
 
@@ -64,7 +64,7 @@ class ClientStorageInstance implements StorageInstance {
 	}
 
 	public async delete(file: File): Promise<void> {
-		await this._xhr.delete(`/files/${file.dir_type}/${file.id}`);
+		await this._xhr.delete(`/files/${file.dir_type}/${file.id_storage}`);
 	}
 }
 

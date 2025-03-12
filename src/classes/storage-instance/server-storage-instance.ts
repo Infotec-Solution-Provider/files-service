@@ -49,12 +49,12 @@ class ServerStorageInstance implements StorageInstance {
 
 	public async read(file: File): Promise<Buffer> {
 		return await readFile(
-			this.fileToDir(file.dir_type, file.id, file.name)
+			this.fileToDir(file.dir_type, file.id_storage, file.name)
 		);
 	}
 
 	public async delete(file: File): Promise<void> {
-		return await rm(this.fileToDir(file.dir_type, file.id), {
+		return await rm(this.fileToDir(file.dir_type, file.id_storage), {
 			recursive: true,
 		});
 	}

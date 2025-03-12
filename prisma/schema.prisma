@@ -8,7 +8,8 @@ datasource db {
 }
 
 model File {
-  id         String      @id @db.Uuid
+  id         Int         @id @default(autoincrement())
+  id_storage String      @db.Uuid
   name       String      @db.VarChar(100)
   mime_type  String      @db.VarChar(100)
   size       Int
@@ -21,10 +22,13 @@ model File {
 }
 
 model Storage {
-  id       Int             @id
-  instance String          @db.VarChar(30)
-  type     FileStorageType
-  details  Json?           @db.Json
+  id         Int             @id @default(autoincrement())
+  instance   String          @db.VarChar(30)
+  type       FileStorageType
+  server_url String?
+  timeout    Int?
+  token      String?
+  isDefault  Boolean         @default(false)
 
   files File[]
 
@@ -38,6 +42,5 @@ enum FileStorageType {
 
 enum FileDirType {
   public
-  temp
   models
 }

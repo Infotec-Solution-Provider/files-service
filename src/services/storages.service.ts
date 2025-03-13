@@ -86,7 +86,7 @@ class StorageService {
 			if (!!generatedStorage) {
 				this.storageInstances.set(storage.id, generatedStorage);
 			}
-			if (!!generatedStorage && storage.isDefault) {
+			if (!!generatedStorage && storage.is_default) {
 				this.defaultInstances.set(storage.instance, generatedStorage);
 			}
 		}
@@ -98,7 +98,7 @@ class StorageService {
 		if (!!generatedStorage) {
 			this.storageInstances.set(storage.id, generatedStorage);
 		}
-		if (!!generatedStorage && storage.isDefault) {
+		if (!!generatedStorage && storage.is_default) {
 			this.defaultInstances.set(storage.instance, generatedStorage);
 		}
 	}
@@ -121,7 +121,7 @@ class StorageService {
 
 	private createClientInstance(storage: p.Storage) {
 		const axiosConfig = {
-			url: storage.server_url!,
+			url: storage.client_url!,
 			timeout: storage.timeout || 10000,
 			headers: {
 				authorization: storage.token ?? undefined,
@@ -134,11 +134,11 @@ class StorageService {
 	private async resetDefaultStorage(instance: string): Promise<void> {
 		await prismaService.storage.updateMany({
 			where: {
-				isDefault: true,
+				is_default: true,
 				instance,
 			},
 			data: {
-				isDefault: false,
+				is_default: false,
 			},
 		});
 	}

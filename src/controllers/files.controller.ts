@@ -3,6 +3,7 @@ import filesService from "../services/files.service";
 import Controller from "./controller";
 import upload from "../middlewares/multer.middleware";
 import { BadRequestError } from "@rgranatodutra/http-errors";
+import { Logger } from "@in.pulse-crm/utils";
 
 class FilesController extends Controller {
 	constructor() {
@@ -24,10 +25,7 @@ class FilesController extends Controller {
 
 		const file = await filesService.getFile(+id!);
 
-		console.log(
-			`${new Date().toLocaleString()} - File with name ${file.name
-			} downloaded`
-		);
+		Logger.info(`File with name ${file.name} downloaded`);
 
 		res.setHeader("Content-Type", file.mimeType);
 		res.setHeader("Content-Length", file.size);
@@ -62,10 +60,7 @@ class FilesController extends Controller {
 			file
 		);
 
-		console.log(
-			`${new Date().toLocaleString()} - File with name ${file.originalname
-			} uploaded`
-		);
+		Logger.info(`File with name ${file.originalname} uploaded`);
 
 		res.status(201).send({
 			message: "File uploaded successfully",
@@ -77,10 +72,8 @@ class FilesController extends Controller {
 		const { id } = req.params;
 
 		await filesService.deleteFile(Number(id));
-
-		console.log(
-			`${new Date().toLocaleString()} - File with id ${id} deleted`
-		);
+		
+		Logger.info(`File with id ${id} deleted`);
 
 		res.status(204).send();
 	}

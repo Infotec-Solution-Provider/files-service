@@ -3,15 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model File {
   id         Int         @id @default(autoincrement())
-  id_storage String      @db.Uuid
-  name       String      @db.VarChar(100)
-  mime_type  String      @db.VarChar(100)
+  id_storage String      @db.VarChar(36)
+  name       String      @db.VarChar(255)
+  mime_type  String      @db.VarChar(255)
   size       Int
   dir_type   FileDirType
   storage_id Int
@@ -25,10 +25,10 @@ model Storage {
   id         Int             @id @default(autoincrement())
   instance   String          @db.VarChar(30)
   type       FileStorageType
-  server_url String?
+  client_url String?
   timeout    Int?
   token      String?
-  isDefault  Boolean         @default(false)
+  is_default Boolean         @default(false)
 
   files File[]
 

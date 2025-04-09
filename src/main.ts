@@ -3,7 +3,6 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import filesController from "./controllers/files.controller";
 import { Logger } from "@in.pulse-crm/utils";
-//import { Logger } from "@in.pulse-crm/utils";
 
 const app = express();
 const ROUTE_PREFIX = "/api";
@@ -18,6 +17,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	res.status(500).send({ message: "Internal server error", cause: err });
 });
 
-app.listen(Number(process.env["SERVER_PORT"]) || 6000, () => {
-	console.log("Server is running on port 6000");
+const LISTEN_PORT = Number(process.env["LISTEN_PORT"]) || 8003;
+
+app.listen(LISTEN_PORT, () => {
+	console.log("Server is running on port ", LISTEN_PORT);
 });

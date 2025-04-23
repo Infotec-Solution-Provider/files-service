@@ -10,6 +10,7 @@ class FilesController extends Controller {
 		super();
 
 		this.router.get("/files/:id", this.getFile);
+		this.router.get("/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/files/:id", this.deleteFile);
 	}
@@ -17,6 +18,7 @@ class FilesController extends Controller {
 	public async getFile(req: Request, res: Response) {
 		const { id } = req.params;
 
+		console.log(req.params);
 		if (Number.isNaN(+id!)) {
 			throw new BadRequestError(
 				"the url param id must be a number. provided: " + id
@@ -35,6 +37,23 @@ class FilesController extends Controller {
 		);
 
 		res.send(file.buffer);
+	}
+
+	public async getFileMetadata(req: Request, res: Response) {
+		const { id } = req.params;
+
+		if (Number.isNaN(+id!)) {
+			throw new BadRequestError(
+				"the url param id must be a number. provided: " + id
+			);
+		}
+
+		const file = await filesService.getFile(+id!);
+
+		res.status(200).send({
+			message: "File metadata fetched successfully",
+			data: file,
+		});
 	}
 
 	public async uploadFile(req: Request, res: Response) {
@@ -72,7 +91,7 @@ class FilesController extends Controller {
 		const { id } = req.params;
 
 		await filesService.deleteFile(Number(id));
-		
+
 		Logger.info(`File with id ${id} deleted`);
 
 		res.status(204).send();

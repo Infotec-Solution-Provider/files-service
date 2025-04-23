@@ -11,17 +11,24 @@ class FilesService {
 	}
 
 	public async getFile(id: number): Promise<StoredFile> {
-		const file = await prismaService.file.findUniqueOrThrow({ where: { id } });
-        const storage = this.storageService.getStorageInstance(file.storage_id);
-        const buffer = await storage.read(file);
+		const file = await prismaService.file.findUniqueOrThrow({
+			where: { id },
+		});
+		const storage = this.storageService.getStorageInstance(file.storage_id);
+		const buffer = await storage.read(file);
 
-        return new StoredFile(file, buffer);
+		return new StoredFile(file, buffer);
 	}
 
-    public async uploadFile(instance: string, dirType: FileDirType, file: Express.Multer.File ): Promise<File> {
-        const storage = this.storageService.getDefaultStorageInstance(instance);
-        const storageFile = await storage.write(dirType, file);
-        const savedFile = await prismaService.file.create({
+	public async uploadFile(
+		instance: string,
+		dirType: FileDirType,
+		file: Express.Multer.File
+	): Promise<File> {
+		const storage = this.storageService.getDefaultStorageInstance(instance);
+		const storageFile = await storage.write(dirType, file);
+
+		const savedFile = await prismaService.file.create({
 			data: {
 				id_storage: storageFile.id,
 				storage_id: storage.data.id,
@@ -32,16 +39,18 @@ class FilesService {
 			},
 		});
 
-        return savedFile;
-    }
+		return savedFile;
+	}
 
-    public async deleteFile(id: number): Promise<void> {
-        const file = await prismaService.file.findUniqueOrThrow({ where: { id } });
-        const storage = this.storageService.getStorageInstance(file.storage_id);
+	public async deleteFile(id: number): Promise<void> {
+		const file = await prismaService.file.findUniqueOrThrow({
+			where: { id },
+		});
+		const storage = this.storageService.getStorageInstance(file.storage_id);
 
-        await storage.delete(file);
-        await prismaService.file.delete({ where: { id } });
-    }
+		await storage.delete(file);
+		await prismaService.file.delete({ where: { id } });
+	}
 }
 
 export default new FilesService(storagesService);

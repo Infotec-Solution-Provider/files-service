@@ -17,8 +17,7 @@ class FilesController extends Controller {
 
 	public async getFile(req: Request, res: Response) {
 		const { id } = req.params;
-
-		console.log(req.params);
+		
 		if (Number.isNaN(+id!)) {
 			throw new BadRequestError(
 				"the url param id must be a number. provided: " + id

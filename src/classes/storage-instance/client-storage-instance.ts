@@ -3,6 +3,17 @@ import StorageInstance from "./storage-instance";
 import axios, { CreateAxiosDefaults } from "axios";
 import { AxiosInstance } from "axios";
 
+interface WabaMediaResult {
+	message: string;
+	data: {
+		id: string;
+		name: string;
+		type: string;
+		size: number;
+		date: string;
+	}
+}
+
 class ClientStorageInstance implements StorageInstance {
 	private _storage: Storage;
 	private _xhr: AxiosInstance;
@@ -25,10 +36,13 @@ class ClientStorageInstance implements StorageInstance {
 		file: Express.Multer.File
 	): Promise<{ id: string }> {
 		const formData = new FormData();
-		formData.append("file", new Blob([file.buffer]), file.originalname);
+		const uarr = new Uint8Array(file.buffer);
+
+		formData.append("file", new Blob([uarr]), file.originalname);
+		formData.append("folder", dirType);
 
 		const res = await this._xhr.post<{ id: string }>(
-			`/files/${dirType}`,
+			`/api/storage/`,
 			formData,
 			{
 				headers: { "Content-Type": "multipart/form-data" },
@@ -40,7 +54,7 @@ class ClientStorageInstance implements StorageInstance {
 
 	public async read(file: File): Promise<Buffer> {
 		const response = await this._xhr.get(
-			`/files/${file.dir_type}/${file.id_storage}`,
+			`/api/storage/${file.id_storage}`,
 			{ responseType: "stream" }
 		);
 
@@ -64,7 +78,15 @@ class ClientStorageInstance implements StorageInstance {
 	}
 
 	public async delete(file: File): Promise<void> {
-		await this._xhr.delete(`/files/${file.dir_type}/${file.id_storage}`);
+		await this._xhr.delete(`/api/storage/${file.id_storage}`);
+	}
+
+	public async writeFromWabaMedia(wabaMediaId: string) {
+		const res = await this._xhr.get<WabaMediaResult>(
+			`/api/waba/media/${wabaMediaId}`
+		);
+
+		return res.data.data;
 	}
 }
 

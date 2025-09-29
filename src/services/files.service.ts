@@ -51,6 +51,26 @@ class FilesService {
 		await storage.delete(file);
 		await prismaService.file.delete({ where: { id } });
 	}
+
+	public async getFileFromWabaMedia(
+		instance: string,
+		wabaMediaId: string
+	): Promise<File> {
+		const storage = this.storageService.getDefaultStorageInstance(instance);
+		const storageFile = await storage.writeFromWabaMedia(wabaMediaId);
+		const savedFile = await prismaService.file.create({
+			data: {
+				id_storage: storageFile.id,
+				storage_id: storage.data.id,
+				dir_type: FileDirType.public,
+				name: storageFile.name,
+				mime_type: storageFile.type,
+				size: storageFile.size,
+			},
+		});
+
+		return savedFile;
+	}
 }
 
 export default new FilesService(storagesService);

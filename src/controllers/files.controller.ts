@@ -13,11 +13,13 @@ class FilesController extends Controller {
 		this.router.get("/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/files/:id", this.deleteFile);
+		this.router.post("/waba", this.uploadWabaMedia
+		);
 	}
 
 	public async getFile(req: Request, res: Response) {
 		const { id } = req.params;
-		
+
 		if (Number.isNaN(+id!)) {
 			throw new BadRequestError(
 				"the url param id must be a number. provided: " + id
@@ -94,6 +96,32 @@ class FilesController extends Controller {
 		Logger.info(`File with id ${id} deleted`);
 
 		res.status(204).send();
+	}
+
+	public async uploadWabaMedia(req: Request, res: Response) {
+		const { instance, wabaMediaId } = req.body;
+
+		const isInstanceString = typeof instance === "string";
+		const isWabaMediaIdString = typeof wabaMediaId === "string";
+
+		if (!isInstanceString || !isWabaMediaIdString) {
+			res.status(400).send({
+				message: "Instance and wabaMediaId fields are required",
+			});
+			return;
+		}
+		const savedFile = await filesService.getFileFromWabaMedia(
+			instance as string,
+			wabaMediaId as string
+		);
+		Logger.info(
+			`File with name ${savedFile.name} from wabaMediaId ${wabaMediaId} fetched`
+		);
+
+		res.status(201).send({
+			message: "File fetched successfully",
+			data: savedFile,
+		});
 	}
 }
 

@@ -1,6 +1,5 @@
 import { File, FileDirType, Storage } from "@prisma/client";
 import StorageInstance from "./storage-instance";
-import axios, { CreateAxiosDefaults } from "axios";
 import { AxiosInstance } from "axios";
 
 interface WabaMediaResult {
@@ -18,9 +17,9 @@ class ClientStorageInstance implements StorageInstance {
 	private _storage: Storage;
 	private _xhr: AxiosInstance;
 
-	constructor(storage: Storage, config: CreateAxiosDefaults) {
+	constructor(storage: Storage, axios: AxiosInstance) {
 		this._storage = storage;
-		this._xhr = axios.create(config);
+		this._xhr = axios;
 	}
 
 	public get data(): Storage {
@@ -55,26 +54,10 @@ class ClientStorageInstance implements StorageInstance {
 	public async read(file: File): Promise<Buffer> {
 		const response = await this._xhr.get(
 			`/api/storage/${file.id_storage}`,
-			{ responseType: "stream" }
+			{ responseType: "arraybuffer" }
 		);
 
-		const buffer = await new Promise<Buffer>((resolve, reject) => {
-			const chunks: Uint8Array[] = [];
-
-			response.data.on("data", (chunk: Uint8Array) => {
-				chunks.push(chunk);
-			});
-
-			response.data.on("end", () => {
-				resolve(Buffer.concat(chunks));
-			});
-
-			response.data.on("error", (error: Error) => {
-				reject(error);
-			});
-		});
-
-		return buffer;
+		return Buffer.from(response.data);
 	}
 
 	public async delete(file: File): Promise<void> {

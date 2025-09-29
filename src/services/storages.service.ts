@@ -4,6 +4,7 @@ import * as p from "@prisma/client";
 import prismaService from "./prisma.service";
 import ClientStorage from "../classes/storage-instance/client-storage-instance";
 import ServerStorage from "../classes/storage-instance/server-storage-instance";
+import axios from "axios";
 
 class StorageService {
 	private readonly storageInstances = new Map<number, StorageInstance>();
@@ -63,14 +64,14 @@ class StorageService {
 		if (!findInstance) {
 			throw new Error(`Default storage with instance ${instance} not found`);
 		}
-		
+
 		return findInstance;
 	}
 
 	public getStorageInstance(id: number) {
 		const findInstance = this.storageInstances.get(id);
 
-		if(!findInstance) {
+		if (!findInstance) {
 			throw new Error(`Storage with id ${id} not found`);
 		}
 
@@ -120,15 +121,15 @@ class StorageService {
 	}
 
 	private createClientInstance(storage: p.Storage) {
-		const axiosConfig = {
-			url: storage.client_url!,
+		const ax = axios.create({
+			baseURL: storage.client_url || "",
 			timeout: storage.timeout || 10000,
 			headers: {
-				authorization: storage.token ?? undefined,
+				authorization: storage.token ?? "",
 			},
-		};
+		})
 
-		return new ClientStorage(storage, axiosConfig);
+		return new ClientStorage(storage, ax);
 	}
 
 	private async resetDefaultStorage(instance: string): Promise<void> {

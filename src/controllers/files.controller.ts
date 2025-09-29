@@ -18,26 +18,31 @@ class FilesController extends Controller {
 	}
 
 	public async getFile(req: Request, res: Response) {
-		const { id } = req.params;
+		try {
+			const { id } = req.params;
 
-		if (Number.isNaN(+id!)) {
-			throw new BadRequestError(
-				"the url param id must be a number. provided: " + id
+			if (Number.isNaN(+id!)) {
+				throw new BadRequestError(
+					"the url param id must be a number. provided: " + id
+				);
+			}
+
+			const file = await filesService.getFile(+id!);
+
+			Logger.info(`File with name ${file.name} downloaded`);
+
+			res.setHeader("Content-Type", file.mimeType);
+			res.setHeader("Content-Length", file.size);
+			res.setHeader(
+				"Content-Disposition",
+				`attachment; filename="${encodeURIComponent(file.name)}"`
 			);
+
+			res.send(file.buffer);
+		} catch (error: any) {
+			Logger.error("Error fetching file", error);
+			res.status(500).send({ message: "Internal server error", error });
 		}
-
-		const file = await filesService.getFile(+id!);
-
-		Logger.info(`File with name ${file.name} downloaded`);
-
-		res.setHeader("Content-Type", file.mimeType);
-		res.setHeader("Content-Length", file.size);
-		res.setHeader(
-			"Content-Disposition",
-			`attachment; filename="${encodeURIComponent(file.name)}"`
-		);
-
-		res.send(file.buffer);
 	}
 
 	public async getFileMetadata(req: Request, res: Response) {

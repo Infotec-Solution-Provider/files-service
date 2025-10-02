@@ -10,7 +10,7 @@ interface WabaMediaResult {
 		type: string;
 		size: number;
 		date: string;
-	}
+	};
 }
 
 class ClientStorageInstance implements StorageInstance {
@@ -65,11 +65,17 @@ class ClientStorageInstance implements StorageInstance {
 	}
 
 	public async writeFromWabaMedia(wabaMediaId: string) {
-		const res = await this._xhr.get<WabaMediaResult>(
-			`/api/waba/media/${wabaMediaId}`
-		);
+		try {
+			const res = await this._xhr.get<WabaMediaResult>(
+				`/api/waba/media/${wabaMediaId}`
+			);
 
-		return res.data.data;
+			return res.data.data;
+		} catch (err: any) {
+			throw new Error(
+				`An error ocurred while fetching media from the StorageClient: ${err.message}`
+			);
+		}
 	}
 }
 

@@ -13,8 +13,7 @@ class FilesController extends Controller {
 		this.router.get("/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/files/:id", this.deleteFile);
-		this.router.post("/waba", this.uploadWabaMedia
-		);
+		this.router.post("/waba", this.uploadWabaMedia);
 	}
 
 	public async getFile(req: Request, res: Response) {
@@ -115,18 +114,24 @@ class FilesController extends Controller {
 			});
 			return;
 		}
-		const savedFile = await filesService.getFileFromWabaMedia(
-			instance as string,
-			wabaMediaId as string
-		);
-		Logger.info(
-			`File with name ${savedFile.name} from wabaMediaId ${wabaMediaId} fetched`
-		);
 
-		res.status(201).send({
-			message: "File fetched successfully",
-			data: savedFile,
-		});
+		try {
+			const savedFile = await filesService.getFileFromWabaMedia(
+				instance as string,
+				wabaMediaId as string
+			);
+			res.status(201).send({
+				message: "File fetched successfully",
+				data: savedFile,
+			});
+			Logger.info(
+				`File with name ${savedFile.name} from wabaMediaId ${wabaMediaId} fetched`
+			);
+		} catch (error: any) {
+			Logger.error("Error fetching file from WABA media", error);
+			res.status(500).send({ message: "Internal server error", error });
+			return;
+		}
 	}
 }
 

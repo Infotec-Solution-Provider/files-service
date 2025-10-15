@@ -2,7 +2,6 @@ import { File, FileDirType } from "@prisma/client";
 import StoredFile from "../classes/stored-file";
 import prismaService from "./prisma.service";
 import storagesService from "./storages.service";
-import { Logger } from "@in.pulse-crm/utils";
 
 class FilesService {
 	private readonly storageService: typeof storagesService;

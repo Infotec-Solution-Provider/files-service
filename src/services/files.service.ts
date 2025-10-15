@@ -2,6 +2,7 @@ import { File, FileDirType } from "@prisma/client";
 import StoredFile from "../classes/stored-file";
 import prismaService from "./prisma.service";
 import storagesService from "./storages.service";
+import { Logger } from "@in.pulse-crm/utils";
 
 class FilesService {
 	private readonly storageService: typeof storagesService;
@@ -18,6 +19,14 @@ class FilesService {
 		const buffer = await storage.read(file);
 
 		return new StoredFile(file, buffer);
+	}
+
+	public async getFileMetadata(id: number): Promise<File> {
+		const file = await prismaService.file.findUniqueOrThrow({
+			where: { id },
+		});
+
+		return file;
 	}
 
 	public async uploadFile(

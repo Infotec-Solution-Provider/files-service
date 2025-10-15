@@ -45,20 +45,27 @@ class FilesController extends Controller {
 	}
 
 	public async getFileMetadata(req: Request, res: Response) {
-		const { id } = req.params;
+		try {
+			const { id } = req.params;
 
-		if (Number.isNaN(+id!)) {
-			throw new BadRequestError(
-				"the url param id must be a number. provided: " + id
-			);
+			if (Number.isNaN(+id!)) {
+				throw new BadRequestError(
+					"the url param id must be a number. provided: " + id
+				);
+			}
+
+			const fileMetadata = await filesService.getFileMetadata(+id!);
+
+			Logger.info(`File metadata for id ${id} fetched successfully`);
+
+			res.status(200).send({
+				message: "File metadata fetched successfully",
+				data: fileMetadata,
+			});
+		} catch (error: any) {
+			Logger.error("Error fetching file metadata", error);
+			res.status(500).send({ message: "Internal server error", error });
 		}
-
-		const file = await filesService.getFile(+id!);
-
-		res.status(200).send({
-			message: "File metadata fetched successfully",
-			data: file,
-		});
 	}
 
 	public async uploadFile(req: Request, res: Response) {

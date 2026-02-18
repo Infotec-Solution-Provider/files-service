@@ -33,9 +33,25 @@ class FilesController extends Controller {
 
 			res.setHeader("Content-Type", file.mimeType);
 			res.setHeader("Content-Length", file.size);
+
+			const inlineTypes = [
+				"image/",
+				"application/pdf",
+				"text/plain",
+				"text/html",
+				"audio/",
+				"video/"
+			];
+
+			const isInline = inlineTypes.some(type =>
+				file.mimeType.startsWith(type)
+			);
+
 			res.setHeader(
 				"Content-Disposition",
-				`attachment; filename="${encodeURIComponent(file.name)}"`
+				isInline
+					? `inline; filename="${encodeURIComponent(file.name)}"`
+					: `attachment; filename="${encodeURIComponent(file.name)}"`
 			);
 
 			res.send(file.buffer);

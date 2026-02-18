@@ -25,6 +25,19 @@ class FilesService {
 		return new StoredFile(file, buffer);
 	}
 
+	public async getPublicFile(publicId: string): Promise<StoredFile> {
+		const file = await prismaService.file.findFirstOrThrow({
+			where: {
+				public_id: publicId,
+				dir_type: FileDirType.public,
+			},
+		});
+		const storage = this.storageService.getStorageInstance(file.storage_id);
+		const buffer = await storage.read(file);
+
+		return new StoredFile(file, buffer);
+	}
+
 	public async getFileMetadata(id: number): Promise<File> {
 		const file = await prismaService.file.findUniqueOrThrow({
 			where: { id },
@@ -75,6 +88,7 @@ class FilesService {
 			) {
 				await storage.delete({
 					id: 0,
+					public_id: "",
 					id_storage: storageFile.id,
 					name: file.originalname,
 					mime_type: file.mimetype,

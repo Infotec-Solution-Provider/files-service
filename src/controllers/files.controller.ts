@@ -9,6 +9,7 @@ class FilesController extends Controller {
 	constructor() {
 		super();
 
+		this.router.get("/public/files/:publicId", this.getPublicFile);
 		this.router.get("/files/:id", this.getFile);
 		this.router.get("/files/:id/view", this.viewFile);
 		this.router.get("/files/:id/metadata", this.getFileMetadata);
@@ -57,6 +58,34 @@ class FilesController extends Controller {
 			res.send(file.buffer);
 		} catch (error: any) {
 			Logger.error("Error fetching file", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
+	}
+
+	public async getPublicFile(req: Request, res: Response) {
+		try {
+			const { publicId } = req.params;
+
+			if (!publicId || !/^[A-Za-z0-9_-]{21}$/.test(publicId)) {
+				throw new BadRequestError(
+					"the url param publicId must be a valid 21-character nanoid"
+				);
+			}
+
+			const file = await filesService.getPublicFile(publicId);
+
+			Logger.info(`Public file with name ${file.name} downloaded`);
+
+			res.setHeader("Content-Type", file.mimeType);
+			res.setHeader("Content-Length", file.size);
+			res.setHeader(
+				"Content-Disposition",
+				`inline; filename="${encodeURIComponent(file.name)}"`
+			);
+
+			res.send(file.buffer);
+		} catch (error: any) {
+			Logger.error("Error fetching public file", error);
 			res.status(500).send({ message: "Internal server error", error });
 		}
 	}

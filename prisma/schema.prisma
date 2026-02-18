@@ -13,12 +13,14 @@ model File {
   name       String      @db.VarChar(255)
   mime_type  String      @db.VarChar(255)
   size       Int
+  content_hash String?   @db.Char(64)
   dir_type   FileDirType
   storage_id Int
   created_at DateTime    @default(now())
 
   storage Storage @relation(fields: [storage_id], references: [id], onUpdate: Restrict, map: "FK_FILE_STORAGE")
 
+  @@unique([storage_id, dir_type, content_hash], map: "UQ_FILES_STORAGE_DIR_HASH")
   @@map("files")
 }
 

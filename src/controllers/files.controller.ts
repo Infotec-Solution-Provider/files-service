@@ -98,6 +98,7 @@ class FilesController extends Controller {
 			const file = await filesService.getFile(+id!);
 			const isInlineMedia =
 				file.mimeType.startsWith("image/") ||
+				file.mimeType === "application/pdf" ||
 				file.mimeType.startsWith("video/") ||
 				file.mimeType.startsWith("audio/");
 

@@ -46,6 +46,25 @@ class FilesService {
 		return file;
 	}
 
+	public async getFileByHashAndInstance(
+		contentHash: string,
+		instance: string
+	): Promise<File | null> {
+		const file = await prismaService.file.findFirst({
+			where: {
+				content_hash: contentHash,
+				storage: {
+					instance,
+				},
+			},
+			orderBy: {
+				id: "desc",
+			},
+		});
+
+		return file ?? null;
+	}
+
 	public async uploadFile(
 		instance: string,
 		dirType: FileDirType,

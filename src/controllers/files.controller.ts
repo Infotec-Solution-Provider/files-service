@@ -10,12 +10,48 @@ class FilesController extends Controller {
 		super();
 
 		this.router.get("/public/files/:publicId", this.getPublicFile);
+		this.router.get("/api/files/exists", this.checkFileByHashAndInstance);
 		this.router.get("/api/files/:id", this.getFile);
 		this.router.get("/api/files/:id/view", this.viewFile);
 		this.router.get("/api/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/api/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/api/files/:id", this.deleteFile);
 		this.router.post("/api/waba", this.uploadWabaMedia);
+	}
+
+	public async checkFileByHashAndInstance(req: Request, res: Response) {
+		try {
+			const hash = req.query["hash"];
+			const instance = req.query["instance"];
+
+			if (typeof hash !== "string" || !/^[a-fA-F0-9]{64}$/.test(hash)) {
+				throw new BadRequestError(
+					"query param hash must be a valid 64-character sha256 hash"
+				);
+			}
+
+			if (typeof instance !== "string" || !instance.trim()) {
+				throw new BadRequestError(
+					"query param instance must be a non-empty string"
+				);
+			}
+
+			const file = await filesService.getFileByHashAndInstance(
+				hash,
+				instance
+			);
+
+			res.status(200).send({
+				message: "File lookup completed",
+				data: {
+					existis: !!file,
+					file,
+				},
+			});
+		} catch (error: any) {
+			Logger.error("Error checking file by hash and instance", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
 	}
 
 	public async getFile(req: Request, res: Response) {

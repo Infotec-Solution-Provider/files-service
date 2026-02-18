@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import filesController from "./controllers/files.controller";
 import { Logger } from "@in.pulse-crm/utils";
+import fileCleanupService from "./services/file-cleanup.service";
 
 const app = express();
 const ROUTE_PREFIX = "/api";
@@ -21,4 +22,5 @@ const LISTEN_PORT = Number(process.env["LISTEN_PORT"]) || 8003;
 
 app.listen(LISTEN_PORT, () => {
 	console.log("Server is running on port ", LISTEN_PORT);
+	fileCleanupService.start();
 });

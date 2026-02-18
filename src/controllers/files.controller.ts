@@ -10,6 +10,7 @@ class FilesController extends Controller {
 		super();
 
 		this.router.get("/files/:id", this.getFile);
+		this.router.get("/files/:id/view", this.viewFile);
 		this.router.get("/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/files/:id", this.deleteFile);
@@ -64,6 +65,69 @@ class FilesController extends Controller {
 			});
 		} catch (error: any) {
 			Logger.error("Error fetching file metadata", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
+	}
+
+	public async viewFile(req: Request, res: Response) {
+		try {
+			const { id } = req.params;
+
+			if (Number.isNaN(+id!)) {
+				throw new BadRequestError(
+					"the url param id must be a number. provided: " + id
+				);
+			}
+
+			const file = await filesService.getFile(+id!);
+			const isImageOrVideo =
+				file.mimeType.startsWith("image/") || file.mimeType.startsWith("video/");
+
+			if (!isImageOrVideo) {
+				this.getFile(req, res);
+				return;
+			}
+
+			res.setHeader("Content-Type", file.mimeType);
+			res.setHeader(
+				"Content-Disposition",
+				`inline; filename="${encodeURIComponent(file.name)}"`
+			);
+
+			const range = req.headers.range;
+
+			if (file.mimeType.startsWith("video/") && range) {
+				const [startRaw, endRaw] = range.replace("bytes=", "").split("-");
+				const start = Number(startRaw);
+				const end = endRaw ? Number(endRaw) : file.size - 1;
+
+				if (
+					Number.isNaN(start) ||
+					Number.isNaN(end) ||
+					start < 0 ||
+					end >= file.size ||
+					start > end
+				) {
+					res.status(416).send({ message: "Invalid range" });
+					return;
+				}
+
+				const chunk = file.buffer.subarray(start, end + 1);
+
+				res.status(206);
+				res.setHeader("Accept-Ranges", "bytes");
+				res.setHeader("Content-Range", `bytes ${start}-${end}/${file.size}`);
+				res.setHeader("Content-Length", chunk.length);
+				res.send(chunk);
+				return;
+			}
+
+			res.setHeader("Content-Length", file.size);
+			res.send(file.buffer);
+
+			Logger.info(`File with name ${file.name} rendered inline`);
+		} catch (error: any) {
+			Logger.error("Error rendering file inline", error);
 			res.status(500).send({ message: "Internal server error", error });
 		}
 	}

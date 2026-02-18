@@ -6,12 +6,11 @@ import { Logger } from "@in.pulse-crm/utils";
 import fileCleanupService from "./services/file-cleanup.service";
 
 const app = express();
-const ROUTE_PREFIX = "/api";
 
 app.use(cors());
 app.use(express.json());
 
-app.use(ROUTE_PREFIX, filesController.routes);
+app.use(filesController.routes);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	Logger.error("Internal server error", err);

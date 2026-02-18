@@ -10,12 +10,12 @@ class FilesController extends Controller {
 		super();
 
 		this.router.get("/public/files/:publicId", this.getPublicFile);
-		this.router.get("/files/:id", this.getFile);
-		this.router.get("/files/:id/view", this.viewFile);
-		this.router.get("/files/:id/metadata", this.getFileMetadata);
-		this.router.post("/files", upload.single("file"), this.uploadFile);
-		this.router.delete("/files/:id", this.deleteFile);
-		this.router.post("/waba", this.uploadWabaMedia);
+		this.router.get("/api/files/:id", this.getFile);
+		this.router.get("/api/files/:id/view", this.viewFile);
+		this.router.get("/api/files/:id/metadata", this.getFileMetadata);
+		this.router.post("/api/files", upload.single("file"), this.uploadFile);
+		this.router.delete("/api/files/:id", this.deleteFile);
+		this.router.post("/api/waba", this.uploadWabaMedia);
 	}
 
 	public async getFile(req: Request, res: Response) {

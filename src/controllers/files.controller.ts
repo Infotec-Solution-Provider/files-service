@@ -96,10 +96,12 @@ class FilesController extends Controller {
 			}
 
 			const file = await filesService.getFile(+id!);
-			const isImageOrVideo =
-				file.mimeType.startsWith("image/") || file.mimeType.startsWith("video/");
+			const isInlineMedia =
+				file.mimeType.startsWith("image/") ||
+				file.mimeType.startsWith("video/") ||
+				file.mimeType.startsWith("audio/");
 
-			if (!isImageOrVideo) {
+			if (!isInlineMedia) {
 				this.getFile(req, res);
 				return;
 			}
@@ -112,7 +114,11 @@ class FilesController extends Controller {
 
 			const range = req.headers.range;
 
-			if (file.mimeType.startsWith("video/") && range) {
+			if (
+				(file.mimeType.startsWith("video/") ||
+					file.mimeType.startsWith("audio/")) &&
+				range
+			) {
 				const [startRaw, endRaw] = range.replace("bytes=", "").split("-");
 				const start = Number(startRaw);
 				const end = endRaw ? Number(endRaw) : file.size - 1;

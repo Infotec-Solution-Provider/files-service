@@ -9,7 +9,7 @@ class FilesController extends Controller {
 	constructor() {
 		super();
 
-		this.router.get("/files/:instance/:publicId", this.getPublicFile);
+		this.router.get("/public/:instance/files/:publicId", this.getPublicFile);
 		this.router.get("/api/files/exists", this.checkFileByHashAndInstance);
 		this.router.get("/api/files/:id", this.getFile);
 		this.router.get("/api/files/:id/view", this.viewFile);

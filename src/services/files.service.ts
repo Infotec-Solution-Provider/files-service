@@ -3,6 +3,7 @@ import { File, FileDirType, Prisma } from "@prisma/client";
 import StoredFile from "../classes/stored-file";
 import prismaService from "./prisma.service";
 import storagesService from "./storages.service";
+import WhatsappAudioConverter from "./convert-audio.service";
 
 class FilesService {
 	private readonly storageService: typeof storagesService;
@@ -74,6 +75,7 @@ class FilesService {
 		file: Express.Multer.File
 	): Promise<File> {
 		const storage = this.storageService.getDefaultStorageInstance(instance);
+
 		const contentHash = this.generateFileHash(file.buffer);
 		const existingFile = await prismaService.file.findFirst({
 			where: {
@@ -85,6 +87,13 @@ class FilesService {
 
 		if (existingFile) {
 			return existingFile;
+		}
+
+		if (file.mimetype.startsWith("audio/")) {
+			const converted = await WhatsappAudioConverter.convertToCompatible(file.buffer, file.mimetype);
+			file.buffer = converted.buffer;
+			file.mimetype = converted.mimeType;
+			file.originalname = file.originalname.replace(/\.[^/.]+$/, converted.extension);
 		}
 
 		const storageFile = await storage.write(dirType, file);

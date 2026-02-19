@@ -108,7 +108,7 @@ class FilesController extends Controller {
 				);
 			}
 
-			if (!publicId || !/^[A-Za-z0-9_-]{21}$/.test(publicId)) {
+			if (!publicId) {
 				throw new BadRequestError(
 					"the url param publicId must be a valid 21-character nanoid"
 				);

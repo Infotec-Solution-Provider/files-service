@@ -93,7 +93,7 @@ class FilesService {
 			const converted = await WhatsappAudioConverter.convertToCompatible(file.buffer, file.mimetype);
 			file.buffer = converted.buffer;
 			file.mimetype = converted.mimeType;
-			file.originalname = file.originalname.replace(/\.[^/.]+$/, converted.extension);
+			file.originalname = file.originalname.replace(/\.[^/.]+$/, `.${converted.extension}`);
 		}
 
 		const storageFile = await storage.write(dirType, file);

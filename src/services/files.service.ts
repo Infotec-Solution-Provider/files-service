@@ -25,11 +25,14 @@ class FilesService {
 		return new StoredFile(file, buffer);
 	}
 
-	public async getPublicFile(publicId: string): Promise<StoredFile> {
+	public async getPublicFile(instance: string, publicId: string): Promise<StoredFile> {
 		const file = await prismaService.file.findFirstOrThrow({
 			where: {
 				public_id: publicId,
 				dir_type: FileDirType.public,
+				storage: {
+					instance,
+				},
 			},
 		});
 		const storage = this.storageService.getStorageInstance(file.storage_id);

@@ -9,7 +9,7 @@ class FilesController extends Controller {
 	constructor() {
 		super();
 
-		this.router.get("/public/files/:publicId", this.getPublicFile);
+		this.router.get("files/:instance/:publicId", this.getPublicFile);
 		this.router.get("/api/files/exists", this.checkFileByHashAndInstance);
 		this.router.get("/api/files/:id", this.getFile);
 		this.router.get("/api/files/:id/view", this.viewFile);
@@ -100,7 +100,13 @@ class FilesController extends Controller {
 
 	public async getPublicFile(req: Request, res: Response) {
 		try {
-			const { publicId } = req.params;
+			const { instance, publicId } = req.params;
+
+			if (!instance || !instance.trim()) {
+				throw new BadRequestError(
+					"the url param instance must be a non-empty string"
+				);
+			}
 
 			if (!publicId || !/^[A-Za-z0-9_-]{21}$/.test(publicId)) {
 				throw new BadRequestError(
@@ -108,7 +114,7 @@ class FilesController extends Controller {
 				);
 			}
 
-			const file = await filesService.getPublicFile(publicId);
+			const file = await filesService.getPublicFile(instance, publicId);
 
 			const isInlineMedia =
 				file.mimeType.startsWith("image/") ||

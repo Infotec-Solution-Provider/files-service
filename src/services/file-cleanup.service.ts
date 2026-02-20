@@ -66,6 +66,15 @@ class FileCleanupService {
 			let totalDeleted = 0;
 			let totalFailed = 0;
 
+			const maxCutoffDate = new Date('2026-02-19');
+
+			if (cutoffDate > maxCutoffDate) {
+				Logger.info(
+					`Calculated cutoff date ${cutoffDate.toISOString()} is too far in the past. Adjusting to ${maxCutoffDate.toISOString()}.`
+				);
+				return;
+			}
+
 			while (true) {
 				const expiredFiles = await prismaService.file.findMany({
 					where: {

@@ -83,8 +83,8 @@ class ClientStorageInstance implements StorageInstance {
 	}
 
 	public async getMediaFromFileId(fileId: string): Promise<string> {
-		const res = await this._xhr.get<WabaMediaIdResult>(
-			`/api/storage/${fileId}/media-id`
+		const res = await this._xhr.post<WabaMediaIdResult>(
+			`/api/storage/media-id`, { fileId }
 		);
 
 		return res.data.mediaId;

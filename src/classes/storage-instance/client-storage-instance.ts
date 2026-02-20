@@ -52,7 +52,10 @@ class ClientStorageInstance implements StorageInstance {
 			`/api/storage/`,
 			formData,
 			{
-				headers: { "Content-Type": "multipart/form-data" },
+				headers: {
+					"Content-Type": "multipart/form-data",
+					...formData.getHeaders(),
+				},
 			}
 		);
 

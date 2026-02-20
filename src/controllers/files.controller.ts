@@ -16,7 +16,8 @@ class FilesController extends Controller {
 		this.router.get("/api/files/:id/metadata", this.getFileMetadata);
 		this.router.post("/api/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/api/files/:id", this.deleteFile);
-		this.router.post("/api/waba", this.uploadWabaMedia);
+		this.router.post("/api/waba", this.uploadWabaMedia);                     // Rota que recebe um mediaId e retorna o arquivo correspondente
+		this.router.post("/api/waba/get-media-id", this.getWabaMediaIdFromFile); // Rota que recebe um fileId e retorna o mediaId correspondente
 	}
 
 	public async checkFileByHashAndInstance(req: Request, res: Response) {
@@ -337,6 +338,32 @@ class FilesController extends Controller {
 			);
 		} catch (error: any) {
 			Logger.error("Error fetching file from WABA media", error);
+			res.status(500).send({ message: "Internal server error", error });
+			return;
+		}
+	}
+
+	public async getWabaMediaIdFromFile(req: Request, res: Response) {
+		const fileId = Number(req.body.fileId);
+
+		if (typeof fileId !== "number" || Number.isNaN(fileId)) {
+			res.status(400).send({
+				message: "fileId field is required and must be a number",
+			});
+			return;
+		}
+
+		try {
+			const mediaId = await filesService.getWabaMediaIdFromFile(fileId);
+			res.status(200).send({
+				message: "Media id fetched successfully",
+				data: {
+					mediaId,
+				},
+			});
+			Logger.info(`Media id fetched from file id ${fileId}`);
+		} catch (error: any) {
+			Logger.error("Error fetching media id from file", error);
 			res.status(500).send({ message: "Internal server error", error });
 			return;
 		}

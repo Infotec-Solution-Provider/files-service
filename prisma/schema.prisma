@@ -8,16 +8,17 @@ datasource db {
 }
 
 model File {
-  id         Int         @id @default(autoincrement())
-  public_id  String      @unique @default(nanoid(21)) @db.Char(21)
-  id_storage String      @db.VarChar(36)
-  name       String      @db.VarChar(255)
-  mime_type  String      @db.VarChar(255)
-  size       Int
-  content_hash String?   @db.Char(64)
-  dir_type   FileDirType
-  storage_id Int
-  created_at DateTime    @default(now())
+  id            Int         @id @default(autoincrement())
+  public_id     String      @unique @default(nanoid(21)) @db.Char(21)
+  id_storage    String      @db.VarChar(36)
+  name          String      @db.VarChar(255)
+  mime_type     String      @db.VarChar(255)
+  size          Int
+  content_hash  String?     @db.Char(64)
+  dir_type      FileDirType
+  storage_id    Int
+  created_at    DateTime    @default(now())
+  waba_media_id String?     @db.VarChar(255)
 
   storage Storage @relation(fields: [storage_id], references: [id], onUpdate: Restrict, map: "FK_FILE_STORAGE")
 

@@ -8,6 +8,7 @@ abstract class StorageInstance {
 	abstract read(file: File): Promise<Buffer>;
 	abstract delete(file: File): Promise<void>;
 	abstract writeFromWabaMedia(wabaMediaId: string): Promise<{ id: string; name: string; type: string; size: number; date: string }>;
+	abstract getMediaFromFileId(fileId: string): Promise<string>;
 
 	abstract get instance(): string;
 	abstract get data(): Storage;

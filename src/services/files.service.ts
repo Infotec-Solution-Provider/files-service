@@ -128,6 +128,7 @@ class FilesService {
 					storage_id: storage.data.id,
 					created_at: new Date(),
 					content_hash: contentHash,
+					waba_media_id: null,
 				});
 
 				const deduplicatedFile = await prismaService.file.findFirstOrThrow({
@@ -173,6 +174,28 @@ class FilesService {
 		});
 
 		return savedFile;
+	}
+
+	public async getWabaMediaIdFromFile(id: number): Promise<string> {
+		const file = await prismaService.file.findUniqueOrThrow({
+			where: { id },
+		});
+
+		if (file.waba_media_id) {
+			return file.waba_media_id;
+		}
+
+		const storage = this.storageService.getStorageInstance(file.storage_id);
+		const mediaId = await storage.getMediaFromFileId(file.id_storage);
+
+		if (mediaId) {
+			await prismaService.file.update({
+				where: { id },
+				data: { waba_media_id: mediaId },
+			});
+		}
+
+		return mediaId;
 	}
 }
 

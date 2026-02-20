@@ -13,6 +13,10 @@ interface WabaMediaResult {
 	};
 }
 
+interface WabaMediaIdResult {
+	mediaId: string;
+}
+
 class ClientStorageInstance implements StorageInstance {
 	private _storage: Storage;
 	private _xhr: AxiosInstance;
@@ -76,6 +80,14 @@ class ClientStorageInstance implements StorageInstance {
 				`An error ocurred while fetching media from the StorageClient: ${err.message}`
 			);
 		}
+	}
+
+	public async getMediaFromFileId(fileId: string): Promise<string> {
+		const res = await this._xhr.get<WabaMediaIdResult>(
+			`/api/storage/${fileId}/media-id`
+		);
+
+		return res.data.mediaId;
 	}
 }
 

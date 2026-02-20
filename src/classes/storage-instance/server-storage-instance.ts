@@ -62,6 +62,10 @@ class ServerStorageInstance implements StorageInstance {
 	public async writeFromWabaMedia(_wabaMediaId: string): Promise<{ id: string; name: string; type: string; size: number; date: string; }> {
 		throw new Error("Method not implemented.");
 	}
+
+	public async getMediaFromFileId(_fileId: string): Promise<string> {
+		throw new Error("Method not implemented.");
+	}
 }
 
 export default ServerStorageInstance;

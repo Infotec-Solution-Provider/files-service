@@ -44,8 +44,8 @@ class ClientStorageInstance implements StorageInstance {
 		formData.append("file", file.buffer, {
 			filename: file.originalname,
 			contentType: file.mimetype,
-			knownLength: file.size
 		});
+
 		formData.append("folder", dirType);
 
 		const res = await this._xhr.post<{ id: string }>(

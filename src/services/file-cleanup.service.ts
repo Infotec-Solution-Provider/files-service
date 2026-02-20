@@ -66,19 +66,28 @@ class FileCleanupService {
 			let totalDeleted = 0;
 			let totalFailed = 0;
 
+			// Não se deve limpar arquivos mais recentes que: 2026-02-19
 			const maxCutoffDate = new Date('2026-02-19');
 
 			if (cutoffDate > maxCutoffDate) {
-				Logger.info(
-					`Calculated cutoff date ${cutoffDate.toISOString()} is too far in the past. Adjusting to ${maxCutoffDate.toISOString()}.`
+				Logger.warning(
+					`Calculated cutoff date ${cutoffDate.toISOString()} is later than max allowed cutoff date ${maxCutoffDate.toISOString()}. Adjusting to max cutoff date.`
 				);
-				return;
+				cutoffDate.setTime(maxCutoffDate.getTime());
 			}
 
 			while (true) {
 				const expiredFiles = await prismaService.file.findMany({
 					where: {
-						created_at: { lte: cutoffDate },
+						OR: [
+							// Files that have been accessed but are now inactive
+							{ last_accessed_at: { lte: cutoffDate } },
+							// Files never accessed that are old enough
+							{
+								last_accessed_at: null,
+								created_at: { lte: cutoffDate },
+							},
+						],
 						storage: {
 							type: FileStorageType.server,
 						},
@@ -113,7 +122,7 @@ class FileCleanupService {
 
 			if (totalDeleted > 0 || totalFailed > 0) {
 				Logger.info(
-					`Files cleanup finished. Deleted: ${totalDeleted}, Failed: ${totalFailed}, Retention: ${this.getRetentionMonths()} months`
+					`Files cleanup finished. Deleted: ${totalDeleted}, Failed: ${totalFailed}, Retention: ${this.getRetentionMonths()} months (based on inactivity)`
 				);
 			}
 		} catch (error) {

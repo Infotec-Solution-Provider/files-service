@@ -23,6 +23,9 @@ class FilesService {
 		const storage = this.storageService.getStorageInstance(file.storage_id);
 		const buffer = await storage.read(file);
 
+		// Update last accessed timestamp (non-blocking)
+		void this.updateLastAccessed(id);
+
 		return new StoredFile(file, buffer);
 	}
 
@@ -38,6 +41,9 @@ class FilesService {
 		});
 		const storage = this.storageService.getStorageInstance(file.storage_id);
 		const buffer = await storage.read(file);
+
+		// Update last accessed timestamp (non-blocking)
+		void this.updateLastAccessed(file.id);
 
 		return new StoredFile(file, buffer);
 	}
@@ -128,6 +134,7 @@ class FilesService {
 					storage_id: storage.data.id,
 					created_at: new Date(),
 					content_hash: contentHash,
+					last_accessed_at: null,
 					waba_media_id: null,
 				});
 
@@ -196,6 +203,17 @@ class FilesService {
 		}
 
 		return mediaId;
+	}
+
+	private async updateLastAccessed(id: number): Promise<void> {
+		try {
+			await prismaService.file.update({
+				where: { id },
+				data: { last_accessed_at: new Date() },
+			});
+		} catch (error) {
+			// Silent fail - don't disrupt file access if tracking fails
+		}
 	}
 }
 

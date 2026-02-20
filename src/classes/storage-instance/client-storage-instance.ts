@@ -1,6 +1,7 @@
 import { File, FileDirType, Storage } from "@prisma/client";
 import StorageInstance from "./storage-instance";
 import { AxiosInstance } from "axios";
+import FormData from "form-data";
 
 interface WabaMediaResult {
 	message: string;
@@ -39,9 +40,12 @@ class ClientStorageInstance implements StorageInstance {
 		file: Express.Multer.File
 	): Promise<{ id: string }> {
 		const formData = new FormData();
-		const uarr = new Uint8Array(file.buffer);
 
-		formData.append("file", new Blob([uarr]), file.originalname);
+		formData.append("file", file.buffer, {
+			filename: file.originalname,
+			contentType: file.mimetype,
+			knownLength: file.size
+		});
 		formData.append("folder", dirType);
 
 		const res = await this._xhr.post<{ id: string }>(

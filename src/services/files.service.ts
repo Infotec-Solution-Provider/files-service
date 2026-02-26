@@ -33,7 +33,6 @@ class FilesService {
 		const file = await prismaService.file.findFirstOrThrow({
 			where: {
 				public_id: publicId,
-				dir_type: FileDirType.public,
 				storage: {
 					instance,
 				},

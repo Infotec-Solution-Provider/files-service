@@ -103,15 +103,15 @@ class FilesController extends Controller {
 		try {
 			const { instance, publicId } = req.params;
 
-			if (!instance || !instance.trim()) {
+			if (typeof instance !== "string" || !instance.trim()) {
 				throw new BadRequestError(
 					"the url param instance must be a non-empty string"
 				);
 			}
 
-			if (!publicId) {
+			if (typeof publicId !== "string" || !publicId.trim()) {
 				throw new BadRequestError(
-					"the url param publicId must be a valid 21-character nanoid"
+					"the url param publicId must be a non-empty string"
 				);
 			}
 

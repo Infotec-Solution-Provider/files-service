@@ -59,13 +59,13 @@ class FilesController extends Controller {
 		try {
 			const { id } = req.params;
 
-			if (Number.isNaN(+id!)) {
-				throw new BadRequestError(
-					"the url param id must be a number. provided: " + id
-				);
+			const numberId = Number(id);
+
+			if (Number.isNaN(numberId)) {
+				throw new BadRequestError("the url param id must be a number. provided: " + id);
 			}
 
-			const file = await filesService.getFile(+id!);
+			const file = await filesService.getFile(numberId)
 
 			Logger.info(`File with name ${file.name} downloaded`);
 
@@ -124,7 +124,30 @@ class FilesController extends Controller {
 				file.mimeType.startsWith("audio/");
 
 			if (!isInlineMedia) {
-				this.getFile(req, res);
+				res.setHeader("Content-Type", file.mimeType);
+				res.setHeader("Content-Length", file.size);
+
+				const inlineTypes = [
+					"image/",
+					"application/pdf",
+					"text/plain",
+					"text/html",
+					"audio/",
+					"video/"
+				];
+
+				const isInline = inlineTypes.some(type =>
+					file.mimeType.startsWith(type)
+				);
+
+				res.setHeader(
+					"Content-Disposition",
+					isInline
+						? `inline; filename="${encodeURIComponent(file.name)}"`
+						: `attachment; filename="${encodeURIComponent(file.name)}"`
+				);
+
+				res.send(file.buffer);
 				return;
 			}
 

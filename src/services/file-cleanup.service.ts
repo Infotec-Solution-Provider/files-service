@@ -4,6 +4,8 @@ import prismaService from "./prisma.service";
 import storagesService from "./storages.service";
 
 class FileCleanupService {
+	private static readonly BATCH_SIZE = 200;
+
 	private readonly storageService: typeof storagesService;
 	private timer?: NodeJS.Timeout;
 	private isRunning = false;
@@ -65,6 +67,7 @@ class FileCleanupService {
 			const cutoffDate = this.getCutoffDate();
 			let totalDeleted = 0;
 			let totalFailed = 0;
+			let lastProcessedId: number | undefined;
 
 			// Não se deve limpar arquivos mais recentes que: 2026-02-19
 			const maxCutoffDate = new Date('2026-02-19');
@@ -79,6 +82,7 @@ class FileCleanupService {
 			while (true) {
 				const expiredFiles = await prismaService.file.findMany({
 					where: {
+						...(lastProcessedId === undefined ? {} : { id: { gt: lastProcessedId } }),
 						OR: [
 							// Files that have been accessed but are now inactive
 							{ last_accessed_at: { lte: cutoffDate } },
@@ -93,12 +97,14 @@ class FileCleanupService {
 						},
 					},
 					orderBy: { id: "asc" },
-					take: 200,
+					take: FileCleanupService.BATCH_SIZE,
 				});
 
 				if (!expiredFiles.length) {
 					break;
 				}
+
+				lastProcessedId = expiredFiles.at(-1)?.id;
 
 				for (const file of expiredFiles) {
 					try {

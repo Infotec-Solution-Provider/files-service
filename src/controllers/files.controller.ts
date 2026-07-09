@@ -294,7 +294,7 @@ class FilesController extends Controller {
 	}
 
 	public async uploadFile(req: Request, res: Response) {
-		const { instance, dirType } = req.body;
+		const { instance, dirType, contentHash } = req.body;
 
 		if (!instance || !dirType) {
 			res.status(400).send({
@@ -313,7 +313,8 @@ class FilesController extends Controller {
 		const savedFile = await filesService.uploadFile(
 			instance,
 			dirType,
-			file
+			file,
+			typeof contentHash === "string" ? contentHash : undefined,
 		);
 
 		Logger.info(`File with name ${file.originalname} uploaded`);

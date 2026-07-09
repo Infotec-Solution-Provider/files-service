@@ -74,11 +74,18 @@ class FilesService {
 	public async uploadFile(
 		instance: string,
 		dirType: FileDirType,
-		file: Express.Multer.File
+		file: Express.Multer.File,
+		providedContentHash?: string,
 	): Promise<File> {
 		const storage = this.storageService.getDefaultStorageInstance(instance);
+		const normalizedProvidedHash = providedContentHash?.trim().toLowerCase();
+		const hasValidProvidedHash =
+			typeof normalizedProvidedHash === "string" &&
+			/^[a-f0-9]{64}$/.test(normalizedProvidedHash);
 
-		const contentHash = this.generateFileHash(file.buffer);
+		const contentHash = hasValidProvidedHash
+			? normalizedProvidedHash
+			: this.generateFileHash(file.buffer);
 		const existingFile = await prismaService.file.findFirst({
 			where: {
 				storage_id: storage.data.id,

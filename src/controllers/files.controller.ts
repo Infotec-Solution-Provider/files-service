@@ -4,6 +4,7 @@ import Controller from "./controller";
 import upload from "../middlewares/multer.middleware";
 import { BadRequestError } from "@rgranatodutra/http-errors";
 import { Logger } from "@in.pulse-crm/utils";
+import { createUploadTraceLogger, resolveUploadTraceId } from "../utils/file-upload-trace";
 
 class FilesController extends Controller {
 	constructor() {
@@ -14,10 +15,140 @@ class FilesController extends Controller {
 		this.router.get("/api/files/:id", this.getFile);
 		this.router.get("/api/files/:id/view", this.viewFile);
 		this.router.get("/api/files/:id/metadata", this.getFileMetadata);
+		this.router.post("/api/files/chunks/init", this.initChunkUpload);
+		this.router.post("/api/files/chunks/:uploadId", upload.single("chunk"), this.uploadFileChunk);
+		this.router.post("/api/files/chunks/:uploadId/complete", this.completeChunkUpload);
 		this.router.post("/api/files", upload.single("file"), this.uploadFile);
 		this.router.delete("/api/files/:id", this.deleteFile);
 		this.router.post("/api/waba", this.uploadWabaMedia);                     // Rota que recebe um mediaId e retorna o arquivo correspondente
 		this.router.post("/api/waba/get-media-id", this.getWabaMediaIdFromFile); // Rota que recebe um fileId e retorna o mediaId correspondente
+	}
+
+	public async initChunkUpload(req: Request, res: Response) {
+		try {
+			const {
+				instance,
+				dirType,
+				fileName,
+				fileType,
+				totalSize,
+				totalChunks,
+				contentHash,
+				traceId: bodyTraceId,
+			} = req.body;
+			const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
+
+			if (!instance || !dirType || !fileName || !fileType) {
+				res.status(400).send({
+					message: "instance, dirType, fileName and fileType are required",
+				});
+				return;
+			}
+
+			const parsedTotalSize = Number(totalSize);
+			const parsedTotalChunks = Number(totalChunks);
+
+			if (!Number.isFinite(parsedTotalSize) || parsedTotalSize <= 0) {
+				res.status(400).send({ message: "totalSize must be a number greater than 0" });
+				return;
+			}
+
+			if (!Number.isInteger(parsedTotalChunks) || parsedTotalChunks <= 0) {
+				res.status(400).send({ message: "totalChunks must be an integer greater than 0" });
+				return;
+			}
+
+			const data = await filesService.createChunkUploadSession({
+				instance,
+				dirType,
+				fileName,
+				fileType,
+				totalSize: parsedTotalSize,
+				totalChunks: parsedTotalChunks,
+				...(typeof contentHash === "string" ? { contentHash } : {}),
+				traceId,
+			});
+
+			res.status(201).send({
+				message: "Chunk upload initialized",
+				data,
+			});
+		} catch (error: any) {
+			Logger.error("Error initializing chunk upload", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
+	}
+
+	public async uploadFileChunk(req: Request, res: Response) {
+		try {
+			const { uploadId } = req.params;
+			const { chunkIndex, totalChunks, traceId: bodyTraceId } = req.body;
+			const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
+
+			if (!uploadId) {
+				res.status(400).send({ message: "uploadId is required" });
+				return;
+			}
+
+			const chunk = req.file;
+
+			if (!chunk) {
+				res.status(400).send({ message: "chunk field is required" });
+				return;
+			}
+
+			const parsedChunkIndex = Number(chunkIndex);
+			const parsedTotalChunks = Number(totalChunks);
+
+			if (!Number.isInteger(parsedChunkIndex) || parsedChunkIndex < 0) {
+				res.status(400).send({ message: "chunkIndex must be an integer >= 0" });
+				return;
+			}
+
+			if (!Number.isInteger(parsedTotalChunks) || parsedTotalChunks <= 0) {
+				res.status(400).send({ message: "totalChunks must be an integer greater than 0" });
+				return;
+			}
+
+			const data = await filesService.uploadChunk(
+				uploadId,
+				parsedChunkIndex,
+				parsedTotalChunks,
+				chunk,
+				traceId,
+			);
+
+			res.status(200).send({
+				message: "Chunk uploaded successfully",
+				data,
+			});
+		} catch (error: any) {
+			Logger.error("Error uploading file chunk", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
+	}
+
+	public async completeChunkUpload(req: Request, res: Response) {
+		try {
+			const { uploadId } = req.params;
+			const { traceId: bodyTraceId } = req.body;
+			const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
+
+			if (!uploadId) {
+				res.status(400).send({ message: "uploadId is required" });
+				return;
+			}
+
+			const savedFile = await filesService.completeChunkUpload(uploadId, traceId);
+
+			res.status(201).send({
+				message: "Chunk upload completed successfully",
+				data: savedFile,
+			});
+		} catch (error: any) {
+			Logger.error("Error completing chunk upload", error);
+			res.status(500).send({ message: "Internal server error", error });
+		}
 	}
 
 	public async checkFileByHashAndInstance(req: Request, res: Response) {
@@ -294,7 +425,17 @@ class FilesController extends Controller {
 	}
 
 	public async uploadFile(req: Request, res: Response) {
-		const { instance, dirType, contentHash } = req.body;
+		const { instance, dirType, contentHash, traceId: bodyTraceId } = req.body;
+		const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
+		const trace = createUploadTraceLogger("files-service.controller.upload", traceId);
+		trace.info("request.received", {
+			instance,
+			dirType,
+			hasContentHash: typeof contentHash === "string" && contentHash.length > 0,
+			fileName: req.file?.originalname,
+			fileSize: req.file?.size,
+			fileType: req.file?.mimetype,
+		});
 
 		if (!instance || !dirType) {
 			res.status(400).send({
@@ -315,9 +456,15 @@ class FilesController extends Controller {
 			dirType,
 			file,
 			typeof contentHash === "string" ? contentHash : undefined,
+			traceId,
 		);
 
 		Logger.info(`File with name ${file.originalname} uploaded`);
+		trace.info("request.completed", {
+			storedFileId: savedFile.id,
+			storedFileSize: savedFile.size,
+			storageId: savedFile.storage_id,
+		});
 
 		res.status(201).send({
 			message: "File uploaded successfully",

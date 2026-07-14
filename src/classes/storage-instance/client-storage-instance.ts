@@ -3,6 +3,10 @@ import StorageInstance from "./storage-instance";
 import { AxiosInstance } from "axios";
 import FormData from "form-data";
 
+const STORAGE_CLIENT_CHUNK_SIZE_BYTES = Number(
+	process.env["STORAGE_CLIENT_CHUNK_SIZE_BYTES"] || String(5 * 1024 * 1024),
+);
+
 interface WabaMediaResult {
 	message: string;
 	data: {
@@ -39,27 +43,50 @@ class ClientStorageInstance implements StorageInstance {
 		dirType: FileDirType,
 		file: Express.Multer.File
 	): Promise<{ id: string }> {
-		const formData = new FormData();
+		const totalChunks = Math.max(
+			1,
+			Math.ceil(file.buffer.length / STORAGE_CLIENT_CHUNK_SIZE_BYTES),
+		);
 
-		formData.append("file", file.buffer, {
-			filename: file.originalname,
-			contentType: file.mimetype,
-		});
-
-		formData.append("folder", dirType);
-
-		const res = await this._xhr.post<{ id: string }>(
-			`/api/storage/`,
-			formData,
+		const initRes = await this._xhr.post<{ uploadId: string }>(
+			`/api/storage/chunks/init`,
 			{
+				folder: dirType,
+				fileName: file.originalname,
+				fileType: file.mimetype,
+				totalSize: file.buffer.length,
+				totalChunks,
+			},
+		);
+
+		const { uploadId } = initRes.data;
+
+		for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+			const start = chunkIndex * STORAGE_CLIENT_CHUNK_SIZE_BYTES;
+			const end = Math.min(start + STORAGE_CLIENT_CHUNK_SIZE_BYTES, file.buffer.length);
+			const formData = new FormData();
+
+			formData.append("chunk", file.buffer.subarray(start, end), {
+				filename: file.originalname,
+				contentType: file.mimetype,
+			});
+			formData.append("chunkIndex", String(chunkIndex));
+			formData.append("totalChunks", String(totalChunks));
+
+			await this._xhr.post(`/api/storage/chunks/${uploadId}`, formData, {
 				headers: {
 					"Content-Type": "multipart/form-data",
 					...formData.getHeaders(),
 				},
-			}
+			});
+		}
+
+		const completeRes = await this._xhr.post<{ id: string }>(
+			`/api/storage/chunks/${uploadId}/complete`,
+			{},
 		);
 
-		return res.data;
+		return completeRes.data;
 	}
 
 	public async read(file: File): Promise<Buffer> {

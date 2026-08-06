@@ -22,6 +22,36 @@ interface WabaMediaIdResult {
 	mediaId: string;
 }
 
+function formatAxiosError(err: any): string {
+	const status = err?.response?.status;
+	const statusText = err?.response?.statusText;
+	const method = err?.config?.method ? String(err.config.method).toUpperCase() : undefined;
+	const url = err?.config?.url;
+	const responseMessage = err?.response?.data?.message;
+	let responseBodyPreview: string | undefined;
+
+	if (typeof err?.response?.data === "string") {
+		responseBodyPreview = err.response.data.slice(0, 400);
+	} else if (err?.response?.data && typeof err.response.data === "object") {
+		try {
+			responseBodyPreview = JSON.stringify(err.response.data).slice(0, 400);
+		} catch (_jsonErr) {
+			responseBodyPreview = "[unserializable-response-body]";
+		}
+	}
+
+	const parts = [
+		method && url ? `${method} ${url}` : undefined,
+		status ? `status=${status}` : undefined,
+		statusText ? `statusText=${statusText}` : undefined,
+		responseMessage ? `message=${responseMessage}` : undefined,
+		err?.message ? `axiosMessage=${err.message}` : undefined,
+		responseBodyPreview ? `body=${responseBodyPreview}` : undefined,
+	].filter(Boolean);
+
+	return parts.join(" | ") || String(err?.message || err);
+}
+
 class ClientStorageInstance implements StorageInstance {
 	private _storage: Storage;
 	private _xhr: AxiosInstance;
@@ -110,9 +140,8 @@ class ClientStorageInstance implements StorageInstance {
 
 			return res.data.data;
 		} catch (err: any) {
-			throw new Error(
-				`An error ocurred while fetching media from the StorageClient: ${err.message}`
-			);
+			const details = formatAxiosError(err);
+			throw new Error(`Failed to fetch WABA media from storage-client: ${details}`);
 		}
 	}
 

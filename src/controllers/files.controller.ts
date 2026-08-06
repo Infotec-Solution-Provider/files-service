@@ -509,7 +509,21 @@ class FilesController extends Controller {
 			);
 		} catch (error: any) {
 			Logger.error("Error fetching file from WABA media", error);
-			res.status(500).send({ message: "Internal server error", error });
+			const downstreamStatus = Number(error?.cause?.response?.status || error?.response?.status);
+			const status = Number.isInteger(downstreamStatus) && downstreamStatus >= 400 && downstreamStatus <= 599
+				? downstreamStatus
+				: 500;
+
+			const details = typeof error?.message === "string"
+				? error.message
+				: "Unknown error while fetching WABA media";
+
+			res.status(status).send({
+				message: "Failed to fetch WABA media",
+				details,
+				wabaMediaId,
+				instance,
+			});
 			return;
 		}
 	}

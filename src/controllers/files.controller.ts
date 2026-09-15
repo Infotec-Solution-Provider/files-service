@@ -5,6 +5,7 @@ import upload from "../middlewares/multer.middleware";
 import { BadRequestError } from "@rgranatodutra/http-errors";
 import { Logger } from "@in.pulse-crm/utils";
 import { createUploadTraceLogger, resolveUploadTraceId } from "../utils/file-upload-trace";
+import { getWabaMediaIdSchema } from "../schemas/waba-media.schema";
 
 class FilesController extends Controller {
 	constructor() {
@@ -85,7 +86,7 @@ class FilesController extends Controller {
 			const { chunkIndex, totalChunks, traceId: bodyTraceId } = req.body;
 			const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
 
-			if (!uploadId) {
+			if (typeof uploadId !== "string" || !uploadId) {
 				res.status(400).send({ message: "uploadId is required" });
 				return;
 			}
@@ -134,7 +135,7 @@ class FilesController extends Controller {
 			const { traceId: bodyTraceId } = req.body;
 			const traceId = resolveUploadTraceId(bodyTraceId, req.headers["x-upload-trace-id"]);
 
-			if (!uploadId) {
+			if (typeof uploadId !== "string" || !uploadId) {
 				res.status(400).send({ message: "uploadId is required" });
 				return;
 			}
@@ -529,17 +530,17 @@ class FilesController extends Controller {
 	}
 
 	public async getWabaMediaIdFromFile(req: Request, res: Response) {
-		const fileId = Number(req.body.fileId);
-
-		if (typeof fileId !== "number" || Number.isNaN(fileId)) {
+		const input = getWabaMediaIdSchema.safeParse(req.body);
+		if (!input.success) {
 			res.status(400).send({
-				message: "fileId field is required and must be a number",
+				message: "fileId must be a positive integer and rejectedMediaId, if provided, must be a non-empty string of at most 255 characters",
 			});
 			return;
 		}
 
+		const { fileId, rejectedMediaId } = input.data;
 		try {
-			const mediaId = await filesService.getWabaMediaIdFromFile(fileId);
+			const mediaId = await filesService.getWabaMediaIdFromFile(fileId, rejectedMediaId);
 			res.status(200).send({
 				message: "Media id fetched successfully",
 				data: {

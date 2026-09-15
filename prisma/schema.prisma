@@ -20,6 +20,7 @@ model File {
   created_at      DateTime    @default(now())
   last_accessed_at DateTime?
   waba_media_id   String?     @db.VarChar(255)
+  waba_media_uploaded_at DateTime?
 
   storage Storage @relation(fields: [storage_id], references: [id], onUpdate: Restrict, map: "FK_FILE_STORAGE")
 

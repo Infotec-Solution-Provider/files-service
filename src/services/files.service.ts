@@ -9,6 +9,7 @@ import prismaService from "./prisma.service";
 import storagesService from "./storages.service";
 import WhatsappAudioConverter from "./convert-audio.service";
 import { createUploadTraceLogger } from "../utils/file-upload-trace";
+import { WabaMediaCache } from "./waba-media-cache";
 
 interface ChunkUploadSessionMetadata {
 	instance: string;
@@ -23,10 +24,27 @@ interface ChunkUploadSessionMetadata {
 
 class FilesService {
 	private readonly storageService: typeof storagesService;
+	private readonly wabaMediaCache: WabaMediaCache;
 	private readonly chunkUploadRootDir = join(tmpdir(), "infotec-files-service-chunks");
 
 	constructor(storageService: typeof storagesService) {
 		this.storageService = storageService;
+		this.wabaMediaCache = new WabaMediaCache({
+			findFile: (id) => prismaService.file.findUniqueOrThrow({ where: { id } }),
+			uploadFile: (file) => this.storageService.getStorageInstance(file.storage_id)
+				.getMediaFromFileId(file.id_storage),
+			replaceCache: async (file, mediaId, uploadedAt) => {
+				const result = await prismaService.file.updateMany({
+					where: {
+						id: file.id,
+						waba_media_id: file.waba_media_id,
+						waba_media_uploaded_at: file.waba_media_uploaded_at,
+					},
+					data: { waba_media_id: mediaId, waba_media_uploaded_at: uploadedAt },
+				});
+				return result.count === 1;
+			},
+		});
 	}
 
 	private generateFileHash(fileBuffer: Buffer): string {
@@ -355,6 +373,7 @@ class FilesService {
 					content_hash: contentHash,
 					last_accessed_at: null,
 					waba_media_id: null,
+					waba_media_uploaded_at: null,
 				});
 
 				const deduplicatedFile = await prismaService.file.findFirstOrThrow({
@@ -411,26 +430,8 @@ class FilesService {
 		return savedFile;
 	}
 
-	public async getWabaMediaIdFromFile(id: number): Promise<string> {
-		const file = await prismaService.file.findUniqueOrThrow({
-			where: { id },
-		});
-
-		if (file.waba_media_id) {
-			return file.waba_media_id;
-		}
-
-		const storage = this.storageService.getStorageInstance(file.storage_id);
-		const mediaId = await storage.getMediaFromFileId(file.id_storage);
-
-		if (mediaId) {
-			await prismaService.file.update({
-				where: { id },
-				data: { waba_media_id: mediaId },
-			});
-		}
-
-		return mediaId;
+	public async getWabaMediaIdFromFile(id: number, rejectedMediaId?: string): Promise<string> {
+		return this.wabaMediaCache.getMediaId(id, rejectedMediaId);
 	}
 
 	private async updateLastAccessed(id: number): Promise<void> {
